@@ -28,14 +28,14 @@ There is a requests object in the file, which is an array of objects, the elemen
 
 To start the application:
 
-``commandline
+```commandline
 cd gateway
 go run cmd/main.go
 ```
 
 To build the application:
 
-``commandline
+```commandline
 cd gateway
 go build cmd/main.go
 ```
