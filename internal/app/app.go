@@ -66,7 +66,7 @@ func Run() {
 		server.WithHandler(router))
 
 	go func() {
-		if err := srv.Run(); err != nil {
+		if err = srv.Run(); err != nil {
 			log.Errorf("error occured while running http server: %s", err.Error())
 		}
 	}()
@@ -81,7 +81,6 @@ func Run() {
 
 	if err := srv.Shutdown(context.Background()); err != nil {
 		log.Errorf("error occured on server shutting down: %s", err.Error())
-
 	}
 }
 

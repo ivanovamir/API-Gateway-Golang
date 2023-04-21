@@ -2,7 +2,7 @@
   "requests": [
     {
       "path": "/api/hello",
-      "url": "https://dev.ufaelectro.ru/api/v1/swagger/index.html#/\n",
+      "url": "https://dev.ufaelectro.ru/api/v1/swagger/index.html#/",
       "method": "GET",
       "make_proxy": true,
       "proxy" : "https://cms.ufaelectro.ru/docs"
