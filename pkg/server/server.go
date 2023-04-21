@@ -1,27 +1,27 @@
 package server
 
 import (
-	"net"
+	"context"
 	"net/http"
 )
 
 type server struct {
-	srv      *http.Server
-	listener net.Listener
+	srv     *http.Server
+	handler http.Handler
 }
 
-func NewServer(options ...Option) *server {
-	srv := &server{}
-
-	for _, opt := range options {
-		opt(srv)
+func NewServer(opts ...Option) *server {
+	s := &server{}
+	for _, opt := range opts {
+		opt(s)
 	}
-	return srv
+	return s
 }
 
 func (s *server) Run() error {
-	if err := s.srv.Serve(s.listener); err != nil {
-		return err
-	}
-	return nil
+	return s.srv.ListenAndServe()
+}
+
+func (s *server) Shutdown(ctx context.Context) error {
+	return s.srv.Shutdown(ctx)
 }

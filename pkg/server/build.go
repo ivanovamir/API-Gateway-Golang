@@ -1,7 +1,6 @@
 package server
 
 import (
-	"net"
 	"net/http"
 )
 
@@ -13,8 +12,8 @@ func WithSrv(srv *http.Server) Option {
 	}
 }
 
-func WithListener(listener net.Listener) Option {
+func WithHandler(handler http.Handler) Option {
 	return func(s *server) {
-		s.listener = listener
+		s.handler = handler
 	}
 }

@@ -3,6 +3,7 @@ package proxy
 import (
 	"fmt"
 	handler_error "gateway/pkg/error"
+	"gateway/pkg/logging"
 	"github.com/julienschmidt/httprouter"
 	"io"
 	"net/http"
@@ -14,6 +15,7 @@ type proxy struct {
 	proxy       bool
 	proxyUrl    string
 	redirectUrl string
+	log         *logging.Logger
 }
 
 type Proxy interface {
@@ -36,7 +38,7 @@ func (p *proxy) Redirect() httprouter.Handle {
 		w.Header().Set("Content-Type", "application/json")
 		if p.proxy {
 			resp, err := p.proxyReq(r)
-			// Если ошибка авторизации, возвращаем ошибку
+			// Если ошибка от прокси, возвращаем ошибку
 			if err != nil {
 				w.WriteHeader(resp.StatusCode)
 				w.Write([]byte(err.Error()))
