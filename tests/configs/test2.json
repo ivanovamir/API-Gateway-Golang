@@ -1,0 +1,16 @@
+{
+  "requests": [
+    {
+      "path": "/api/hello",
+      "url": "https://jsonplaceholder.typicode.com/posts/1",
+      "method": "GET",
+      "make_proxy": true,
+      "proxy_method": "GET",
+      "expected_proxy_status_codes": [
+        {
+          "status_code": "200"
+        }
+      ]
+    }
+  ]
+}

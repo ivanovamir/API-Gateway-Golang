@@ -88,6 +88,7 @@ func TestRedirect(t *testing.T) {
 
 	for i, testCase := range testTable {
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
 
 			router := httprouter.New()
 
@@ -220,7 +221,7 @@ func TestProxy(t *testing.T) {
 
 	for i, testCase := range testTable {
 		t.Run(testCase.name, func(t *testing.T) {
-
+			t.Parallel()
 			router := httprouter.New()
 
 			router.Handle(data.Data[i].Method, data.Data[i].Path, proxy.NewProxy(

@@ -1,0 +1,8 @@
+{
+  "requests": [
+    {
+      "path": "/api/hello",
+      "method": "GET"
+    }
+  ]
+}
