@@ -1,39 +1,6 @@
 {
   "requests": [
     {
-      "path": "/api/hello",
-      "url": "https://jsonplaceholder.typicode.com/posts/1",
-      "method": "GET",
-      "make_proxy": true,
-      "proxy" : "https://jsonplaceholder.typicode.com/posts/1",
-      "proxy_method": "GET",
-      "expected_proxy_status_codes": [
-        {
-          "status_code": "200"
-        }
-      ]
-    },
-    {
-      "path": "/api/by",
-      "url": "https://jsonplaceholder.typicode.com/posts",
-      "method": "GET",
-      "make_proxy": false,
-      "proxy" : ""
-    },
-    {
-      "path": "/api/test_get",
-      "url": "https://jsonplaceholder.typicode.com/comments?postId=1",
-      "method": "GET",
-      "make_proxy": true,
-      "proxy" : "https://jsonplaceholder.typicode.com/posts/121312312",
-      "proxy_method": "GET",
-      "expected_proxy_status_codes": [
-        {
-          "status_code": "404"
-        }
-      ]
-    },
-    {
       "path": "/api/test_get_1",
       "url": "https://jsonplaceholder.typicode.com/comments?postId=1",
       "method": "GET",

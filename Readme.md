@@ -8,11 +8,17 @@ Let's look at a sample query configuration.
 {
   "requests": [
     {
-      "path": "/api/hello",
-      "url": "https://api/v1/hello_world",
+      "path": "/api/test_get_1",
+      "url": "https://jsonplaceholder.typicode.com/comments?postId=1",
       "method": "GET",
       "make_proxy": true,
-      "proxy": "https://auth/api/v1/auth"
+      "proxy" : "https://dummyjson.com/auth/products",
+      "proxy_method": "GET",
+      "expected_proxy_status_codes": [
+        {
+          "status_code": "200"
+        }
+      ]
     }
   ]
 }
@@ -25,6 +31,8 @@ There is a requests object in the file, which is an array of objects, the elemen
 - `method` - request method
 - `make_proxy` - flag indicating whether the request should be proxied
 - `proxy` - request path to proxy. If `make_proxy: false` flag value or not specified, there will be validation error.
+- `proxy_method` - specifies which request to send to the proxy server
+- `expected_proxy_status_codes` - array where all expected status codes from proxy service should be specified
 
 To start the application:
 
@@ -40,9 +48,14 @@ cd gateway
 go build cmd/main.go
 ```
 
+To run test:
+```commandline
+go test ./... -v -coverpkg=./...
+```
+
 List of immediate goals for the project:
 
 - [x] Add logging
 - [ ] Expand configuration options for `data.json` file, possibly add query headers.
-- [ ] Cover the application with tests
+- [x] Cover the application with tests
 - [ ] Optimize code
