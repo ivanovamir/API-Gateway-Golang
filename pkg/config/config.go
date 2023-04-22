@@ -66,10 +66,6 @@ func (c *config) validate(dst []byte, src *Data) error {
 			return fmt.Errorf("url is empty")
 		}
 
-		if val.Method == "" {
-			return fmt.Errorf("method is empty")
-		}
-
 		if !c.isUpperCase(val.Method) {
 			return fmt.Errorf("method must be uppercase")
 		}
@@ -77,6 +73,21 @@ func (c *config) validate(dst []byte, src *Data) error {
 		if val.MakeProxy {
 			if val.ProxyUrl == "" {
 				return fmt.Errorf("proxy url is empty")
+			}
+		}
+
+		if val.MakeProxy {
+			if val.ExpectedProxyStatusCodes == nil {
+				return fmt.Errorf("expected_proxy_status_codes is empty")
+			}
+		}
+
+		if val.MakeProxy {
+			if val.ProxyMethod == "" {
+				return fmt.Errorf("proxy_method is empty")
+			}
+			if !c.isUpperCase(val.ProxyMethod) {
+				return fmt.Errorf("proxy_method must be uppercase")
 			}
 		}
 	}

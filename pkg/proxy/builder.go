@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"gateway/pkg/config"
 	"gateway/pkg/logging"
 )
 
@@ -27,5 +28,17 @@ func WithRedirectUrl(redirectUrl string) Option {
 func WithLog(log *logging.Logger) Option {
 	return func(p *proxy) {
 		p.log = log
+	}
+}
+
+func WithExpectedStatusCodes(expectedStatusCodes []config.ExpectedStatusCodes) Option {
+	return func(p *proxy) {
+		p.expectedStatusCodes = expectedStatusCodes
+	}
+}
+
+func WithProxyMethod(proxyMethod string) Option {
+	return func(p *proxy) {
+		p.proxyMethod = proxyMethod
 	}
 }

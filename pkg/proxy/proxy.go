@@ -2,27 +2,36 @@ package proxy
 
 import (
 	"fmt"
+	"gateway/pkg/config"
 	handler_error "gateway/pkg/error"
 	"gateway/pkg/logging"
 	"github.com/julienschmidt/httprouter"
 	"io"
 	"net/http"
+	"strconv"
 )
 
 /*  */
 
 type proxy struct {
-	proxy       bool
-	proxyUrl    string
-	redirectUrl string
-	log         *logging.Logger
+	proxy               bool
+	proxyUrl            string
+	redirectUrl         string
+	log                 *logging.Logger
+	expectedStatusCodes []config.ExpectedStatusCodes
+	proxyMethod         string
+}
+
+type Response struct {
+	ProxyResponse   []byte `json:"proxy_response"`
+	ServiceResponse []byte `json:"service_response"`
 }
 
 type Proxy interface {
-	makeRequest(r *http.Request, url string) (*http.Response, error)
-	prepareRedirect(writer *http.ResponseWriter, resp *http.Response) error
-	proxyReq(r *http.Request) (*http.Response, error)
+	request(r *http.Request, url string, method string) (*http.Response, error)
+	prepareResponse(writer *http.ResponseWriter, resp *http.Response) error
 	Redirect() httprouter.Handle
+	validateStatusCodes(receivedStatusCode int) error
 }
 
 func NewProxy(options ...Option) Proxy {
@@ -37,23 +46,37 @@ func (p *proxy) Redirect() httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 		w.Header().Set("Content-Type", "application/json")
 		if p.proxy {
-			resp, err := p.proxyReq(r)
-			// Если ошибка от прокси, возвращаем ошибку
+			resp, err := p.request(r, p.proxyUrl, p.proxyMethod)
+			// If err from proxy, return error
 			if err != nil {
 				w.WriteHeader(resp.StatusCode)
-				w.Write([]byte(err.Error()))
+				w.Write(handler_error.ErrorHandler(err))
+				return
+			}
+
+			body, err := io.ReadAll(resp.Body)
+
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write(handler_error.ErrorHandler(err))
+				return
+			}
+
+			if err = p.validateStatusCodes(resp.StatusCode); err != nil {
+				w.WriteHeader(resp.StatusCode)
+				w.Write([]byte(fmt.Sprintf("%s", string(body))))
 				return
 			}
 		}
 
-		resp, err := p.makeRequest(r, p.redirectUrl)
+		resp, err := p.request(r, p.redirectUrl, r.Method)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write(handler_error.ErrorHandler(err))
 			return
 		}
 
-		if err = p.prepareRedirect(&w, resp); err != nil {
+		if err = p.prepareResponse(&w, resp); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write(handler_error.ErrorHandler(err))
 			return
@@ -61,11 +84,17 @@ func (p *proxy) Redirect() httprouter.Handle {
 	}
 }
 
-func (p *proxy) makeRequest(r *http.Request, url string) (*http.Response, error) {
-	req, err := http.NewRequest(r.Method, url, r.Body)
+func (p *proxy) request(r *http.Request, url string, method string) (*http.Response, error) {
+	req, err := http.NewRequest(method, url, r.Body)
 
 	if err != nil {
 		return nil, err
+	}
+
+	for header, values := range r.Header {
+		for _, value := range values {
+			req.Header.Add(header, value)
+		}
 	}
 
 	client := &http.Client{}
@@ -78,7 +107,7 @@ func (p *proxy) makeRequest(r *http.Request, url string) (*http.Response, error)
 	return resp, nil
 }
 
-func (p *proxy) prepareRedirect(writer *http.ResponseWriter, resp *http.Response) error {
+func (p *proxy) prepareResponse(writer *http.ResponseWriter, resp *http.Response) error {
 	defer resp.Body.Close()
 	// Возвращаем все хедеры и их значения от сервиса
 	for key, value := range resp.Header {
@@ -97,17 +126,15 @@ func (p *proxy) prepareRedirect(writer *http.ResponseWriter, resp *http.Response
 	return nil
 }
 
-func (p *proxy) proxyReq(r *http.Request) (*http.Response, error) {
-
-	resp, err := p.makeRequest(r, p.proxyUrl)
-
-	if err != nil {
-		return nil, err
+func (p *proxy) validateStatusCodes(receivedStatusCode int) error {
+	for _, val := range p.expectedStatusCodes {
+		sc, err := strconv.Atoi(val.StatusCode)
+		if err != nil {
+			return err
+		}
+		if sc == receivedStatusCode {
+			return nil
+		}
 	}
-
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("%v", resp.Body)
-	}
-
-	return resp, nil
+	return fmt.Errorf("expected status codes: %v, but got: %d", p.expectedStatusCodes, receivedStatusCode)
 }

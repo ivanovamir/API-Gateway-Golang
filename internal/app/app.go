@@ -38,6 +38,8 @@ func Run() {
 			proxy.WithProxyUrl(req.ProxyUrl),
 			proxy.WithRedirectUrl(req.Url),
 			proxy.WithLog(log),
+			proxy.WithExpectedStatusCodes(req.ExpectedProxyStatusCodes),
+			proxy.WithProxyMethod(req.ProxyMethod),
 		).Redirect())
 	}
 
