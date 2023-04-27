@@ -26,7 +26,7 @@ func Run() {
 
 	router := httprouter.New()
 
-	dataReq, err := config.NewConfig(config.WithPath("config_data/data.json")).ParseConfig()
+	dataReq, err := config.NewConfig(config.WithPath("config_proxy/data.json")).ParseConfig()
 
 	if err != nil {
 		log.Fatalf("error parsing data.json: %v", err)

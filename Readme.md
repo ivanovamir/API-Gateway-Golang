@@ -1,6 +1,6 @@
 ### Golang API Gateway using pure tools ###
 
-The main file for this application is the data.json file, which is located in the ./data folder. All routes to be handled by the api must be specified in this file.
+The main file for this application is the data.json file, which is located in the ./config_proxy folder. All routes to be handled by the api must be specified in this file.
 
 Let's look at a sample query configuration.
 
