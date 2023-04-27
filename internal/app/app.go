@@ -9,6 +9,7 @@ import (
 	"gateway/pkg/server"
 	"github.com/julienschmidt/httprouter"
 	"github.com/spf13/viper"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -24,9 +25,10 @@ func Run() {
 		log.Errorf("error initializing configs: %s", err.Error())
 	}
 
-	router := httprouter.New()
-
-	dataReq, err := config.NewConfig(config.WithPath("config_proxy/data.json")).ParseConfig()
+	var (
+		router       = httprouter.New()
+		dataReq, err = config.NewConfig(config.WithPath("config_proxy/data.json")).ParseConfig()
+	)
 
 	if err != nil {
 		log.Fatalf("error parsing data.json: %v", err)
@@ -48,25 +50,32 @@ func Run() {
 	readTimeOut, err := time.ParseDuration(viper.GetString("server.read_timeout"))
 
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Fatalf("errror occured parsing read_timeout from config: %s", err.Error())
 	}
 
 	writeTimeOut, err := time.ParseDuration(viper.GetString("server.write_timeout"))
 
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Fatalf("errror occured parsing write_timeout from config: %s", err.Error())
 	}
 
-	srv := server.NewServer(
-		server.WithSrv(&http.Server{
-			Addr:           fmt.Sprintf(":%s", viper.GetString("server.port")),
-			Handler:        router,
-			MaxHeaderBytes: viper.GetInt("server.max_header_bytes"),
-			ReadTimeout:    readTimeOut,
-			WriteTimeout:   writeTimeOut,
-		}),
-		server.WithHandler(router))
+	ln, err := net.Listen(viper.GetString("server.server_protocol"), fmt.Sprintf(":%s", viper.GetString("server.port")))
 
+	if err != nil {
+		log.Fatalf("error occured listening on port: %s", viper.GetString("server.port"))
+	}
+
+	var (
+		srv = server.NewServer(
+			server.WithListener(&ln),
+			server.WithSrv(&http.Server{
+				Handler:        router,
+				MaxHeaderBytes: viper.GetInt("server.max_header_bytes"),
+				ReadTimeout:    readTimeOut,
+				WriteTimeout:   writeTimeOut,
+			}),
+			server.WithHandler(router))
+	)
 	go func() {
 		if err = srv.Run(); err != nil {
 			log.Errorf("error occured while running http server: %s", err.Error())
@@ -81,7 +90,7 @@ func Run() {
 
 	log.Info("Gateway server shutting down")
 
-	if err := srv.Shutdown(context.Background()); err != nil {
+	if err = srv.Shutdown(context.Background()); err != nil {
 		log.Errorf("error occured on server shutting down: %s", err.Error())
 	}
 }

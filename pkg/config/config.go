@@ -44,7 +44,7 @@ func (c *config) ParseConfig() (Data, error) {
 		return Data{}, err
 	}
 
-	if err := c.validate(body, &data); err != nil {
+	if err = c.validate(body, &data); err != nil {
 		return Data{}, err
 	}
 

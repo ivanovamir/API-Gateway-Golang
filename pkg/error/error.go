@@ -7,6 +7,7 @@ type errorHandler struct {
 }
 
 func ErrorHandler(error error) []byte {
+
 	errStruct := &errorHandler{}
 	errStruct.Error = error.Error()
 
