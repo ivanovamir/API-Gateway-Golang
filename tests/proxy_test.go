@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"gateway/pkg/config"
 	"gateway/pkg/proxy"
-	"github.com/julienschmidt/httprouter"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -90,22 +89,23 @@ func TestRedirect(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			router := httprouter.New()
+			mltPlexer := http.NewServeMux()
 
-			router.Handle(data.Data[i].Method, data.Data[i].Path, proxy.NewProxy(
+			mltPlexer.Handle(data.Data[i].Path, proxy.NewProxy(
 				proxy.WithProxy(data.Data[i].MakeProxy),
 				proxy.WithProxyUrl(data.Data[i].ProxyUrl),
 				proxy.WithRedirectUrl(data.Data[i].Url),
 				proxy.WithLog(nil),
 				proxy.WithExpectedStatusCodes(data.Data[i].ExpectedProxyStatusCodes),
 				proxy.WithProxyMethod(data.Data[i].ProxyMethod),
+				proxy.WithRequestMethod(data.Data[i].Method),
 			).Redirect())
 
 			// Test request
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest(data.Data[i].Method, testCase.path, nil)
 			// Perform Request
-			router.ServeHTTP(w, req)
+			mltPlexer.ServeHTTP(w, req)
 
 			if w.Code != testCase.expectStatusCode {
 				t.Errorf("Expected status code %d, got %d", testCase.expectStatusCode, w.Code)
@@ -222,15 +222,16 @@ func TestProxy(t *testing.T) {
 	for i, testCase := range testTable {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-			router := httprouter.New()
+			mltPlexer := http.NewServeMux()
 
-			router.Handle(data.Data[i].Method, data.Data[i].Path, proxy.NewProxy(
+			mltPlexer.Handle(data.Data[i].Path, proxy.NewProxy(
 				proxy.WithProxy(data.Data[i].MakeProxy),
 				proxy.WithProxyUrl(data.Data[i].ProxyUrl),
 				proxy.WithRedirectUrl(data.Data[i].Url),
 				proxy.WithLog(nil),
 				proxy.WithExpectedStatusCodes(data.Data[i].ExpectedProxyStatusCodes),
 				proxy.WithProxyMethod(data.Data[i].ProxyMethod),
+				proxy.WithRequestMethod(data.Data[i].Method),
 			).Redirect())
 
 			// Test request
@@ -242,7 +243,7 @@ func TestProxy(t *testing.T) {
 			}
 
 			// Perform Request
-			router.ServeHTTP(w, req)
+			mltPlexer.ServeHTTP(w, req)
 
 			if w.Code != testCase.expectStatusCode {
 				t.Errorf("Expected status code %d, got %d", testCase.expectStatusCode, w.Code)

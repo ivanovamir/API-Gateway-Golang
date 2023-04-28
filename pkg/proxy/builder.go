@@ -42,3 +42,9 @@ func WithProxyMethod(proxyMethod string) Option {
 		p.proxyMethod = proxyMethod
 	}
 }
+
+func WithRequestMethod(requestMethod string) Option {
+	return func(p *proxy) {
+		p.requestMethod = requestMethod
+	}
+}

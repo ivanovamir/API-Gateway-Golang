@@ -344,3 +344,7 @@ time="2023-04-28T01:22:47+03:00" level=info msg="Starting Gateway..." func="gate
 time="2023-04-28T01:22:47+03:00" level=info msg="Starting server on port 8080..." func="gateway/internal/app.Run()" file="app.go:48"
 time="2023-04-28T01:22:47+03:00" level=info msg="Gateway successfully started" func="gateway/internal/app.Run()" file="app.go:85"
 time="2023-04-28T01:22:54+03:00" level=info msg="Gateway server shutting down" func="gateway/internal/app.Run()" file="app.go:91"
+time="2023-04-28T13:48:57+03:00" level=info msg="Starting Gateway..." func="gateway/internal/app.Run()" file="app.go:21"
+time="2023-04-28T13:48:57+03:00" level=info msg="Starting server on port 8080..." func="gateway/internal/app.Run()" file="app.go:47"
+time="2023-04-28T13:48:57+03:00" level=info msg="Gateway successfully started" func="gateway/internal/app.Run()" file="app.go:84"
+time="2023-04-28T13:49:00+03:00" level=info msg="Gateway server shutting down" func="gateway/internal/app.Run()" file="app.go:90"

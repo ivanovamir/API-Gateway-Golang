@@ -7,7 +7,6 @@ import (
 	"gateway/pkg/logging"
 	"gateway/pkg/proxy"
 	"gateway/pkg/server"
-	"github.com/julienschmidt/httprouter"
 	"github.com/spf13/viper"
 	"net"
 	"net/http"
@@ -26,7 +25,7 @@ func Run() {
 	}
 
 	var (
-		router       = httprouter.New()
+		mltPlexer    = http.NewServeMux()
 		dataReq, err = config.NewConfig(config.WithPath("config_proxy/data.json")).ParseConfig()
 	)
 
@@ -35,13 +34,14 @@ func Run() {
 	}
 
 	for _, req := range dataReq.Data {
-		router.Handle(req.Method, req.Path, proxy.NewProxy(
+		mltPlexer.Handle(req.Path, proxy.NewProxy(
 			proxy.WithProxy(req.MakeProxy),
 			proxy.WithProxyUrl(req.ProxyUrl),
 			proxy.WithRedirectUrl(req.Url),
 			proxy.WithLog(log),
 			proxy.WithExpectedStatusCodes(req.ExpectedProxyStatusCodes),
 			proxy.WithProxyMethod(req.ProxyMethod),
+			proxy.WithRequestMethod(req.Method),
 		).Redirect())
 	}
 
@@ -69,12 +69,12 @@ func Run() {
 		srv = server.NewServer(
 			server.WithListener(&ln),
 			server.WithSrv(&http.Server{
-				Handler:        router,
+				Handler:        mltPlexer,
 				MaxHeaderBytes: viper.GetInt("server.max_header_bytes"),
 				ReadTimeout:    readTimeOut,
 				WriteTimeout:   writeTimeOut,
 			}),
-			server.WithHandler(router))
+			server.WithHandler(mltPlexer))
 	)
 	go func() {
 		if err = srv.Run(); err != nil {

@@ -5,7 +5,6 @@ import (
 	"gateway/pkg/config"
 	handler_error "gateway/pkg/error"
 	"gateway/pkg/logging"
-	"github.com/julienschmidt/httprouter"
 	"io"
 	"net/http"
 	"strconv"
@@ -20,6 +19,7 @@ type proxy struct {
 	log                 *logging.Logger
 	expectedStatusCodes []config.ExpectedStatusCodes
 	proxyMethod         string
+	requestMethod       string
 }
 
 type Response struct {
@@ -30,7 +30,7 @@ type Response struct {
 type Proxy interface {
 	request(r *http.Request, url string, method string) (*http.Response, error)
 	prepareResponse(writer *http.ResponseWriter, resp *http.Response) error
-	Redirect() httprouter.Handle
+	Redirect() http.HandlerFunc
 	validateStatusCodes(receivedStatusCode int) error
 }
 
@@ -42,9 +42,15 @@ func NewProxy(options ...Option) Proxy {
 	return p
 }
 
-func (p *proxy) Redirect() httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+func (p *proxy) Redirect() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+
+		if r.Method != p.requestMethod {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+
 		if p.proxy {
 			resp, err := p.request(r, p.proxyUrl, p.proxyMethod)
 			// If err from proxy, return error
