@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"bytes"
 	"fmt"
 	"gateway/pkg/config"
 	handler_error "gateway/pkg/error"
@@ -8,27 +9,20 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 /*  */
 
 type proxy struct {
-	proxy               bool
-	proxyUrl            string
-	redirectUrl         string
-	log                 *logging.Logger
-	expectedStatusCodes []config.ExpectedStatusCodes
-	proxyMethod         string
-	requestMethod       string
-}
-
-type Response struct {
-	ProxyResponse   []byte `json:"proxy_response"`
-	ServiceResponse []byte `json:"service_response"`
+	log         *logging.Logger
+	ServiceName string
+	requestData config.Request
+	proxyHeader string
 }
 
 type Proxy interface {
-	request(r *http.Request, url string, method string) (*http.Response, error)
+	request(r *http.Request, url string, method string, body io.Reader) (*http.Response, error)
 	prepareResponse(writer *http.ResponseWriter, resp *http.Response) error
 	Redirect() http.HandlerFunc
 	validateStatusCodes(receivedStatusCode int) error
@@ -46,13 +40,24 @@ func (p *proxy) Redirect() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
-		if r.Method != p.requestMethod {
-			w.WriteHeader(http.StatusMethodNotAllowed)
+		var body bytes.Buffer
+		// Copy request body in buffer before original request is closed
+		if _, err := io.Copy(&body, r.Body); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write(handler_error.ErrorHandler(err))
 			return
 		}
+		defer r.Body.Close()
 
-		if p.proxy {
-			resp, err := p.request(r, p.proxyUrl, p.proxyMethod)
+		if p.requestData.MakeProxy {
+
+			/*
+				We give nil as request body, because we don't need it in proxy request.
+				In these cases we use auth service as proxy.
+				Proxy service need only headers.
+			*/
+
+			resp, err := p.request(r, p.requestData.ProxyUrl, p.requestData.ProxyMethod, nil)
 			// If err from proxy, return error
 			if err != nil {
 				w.WriteHeader(resp.StatusCode)
@@ -73,9 +78,12 @@ func (p *proxy) Redirect() http.HandlerFunc {
 				w.Write([]byte(fmt.Sprintf("%s", string(body))))
 				return
 			}
+
+			r.Header.Set("X-User-ID", resp.Header.Get("X-User-Id"))
 		}
 
-		resp, err := p.request(r, p.redirectUrl, r.Method)
+		resp, err := p.request(r, p.createUrl(strings.TrimPrefix(r.URL.String(), fmt.Sprintf("/%s", p.ServiceName))), r.Method, &body)
+
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write(handler_error.ErrorHandler(err))
@@ -90,8 +98,8 @@ func (p *proxy) Redirect() http.HandlerFunc {
 	}
 }
 
-func (p *proxy) request(r *http.Request, url string, method string) (*http.Response, error) {
-	req, err := http.NewRequest(method, url, r.Body)
+func (p *proxy) request(r *http.Request, url string, method string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequest(method, url, body)
 
 	if err != nil {
 		return nil, err
@@ -127,13 +135,13 @@ func (p *proxy) prepareResponse(writer *http.ResponseWriter, resp *http.Response
 
 	// Копируем тело ответа сервиса в тело ответа клиенту
 	if _, err := io.Copy(*writer, resp.Body); err != nil {
-		return fmt.Errorf("error copying response body: ", err)
+		return fmt.Errorf("error copying response body: %s", err.Error())
 	}
 	return nil
 }
 
 func (p *proxy) validateStatusCodes(receivedStatusCode int) error {
-	for _, val := range p.expectedStatusCodes {
+	for _, val := range p.requestData.ExpectedProxyStatusCodes {
 		sc, err := strconv.Atoi(val.StatusCode)
 		if err != nil {
 			return err
@@ -142,5 +150,10 @@ func (p *proxy) validateStatusCodes(receivedStatusCode int) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("expected status codes: %v, but got: %d", p.expectedStatusCodes, receivedStatusCode)
+	return fmt.Errorf("expected status codes: %v, but got: %d", p.requestData.ExpectedProxyStatusCodes, receivedStatusCode)
+}
+
+func (p *proxy) createUrl(oldUrl string) string {
+
+	return p.requestData.Url + oldUrl
 }

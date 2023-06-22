@@ -7,6 +7,7 @@ import (
 	"gateway/pkg/logging"
 	"gateway/pkg/proxy"
 	"gateway/pkg/server"
+	"github.com/julienschmidt/httprouter"
 	"github.com/spf13/viper"
 	"net"
 	"net/http"
@@ -25,44 +26,41 @@ func Run() {
 	}
 
 	var (
-		mltPlexer    = http.NewServeMux()
-		dataReq, err = config.NewConfig(config.WithPath("config_proxy/data.json")).ParseConfig()
+		mltPlexer    = httprouter.New()
+		dataReq, err = config.NewConfig(config.WithPath("config_proxy/config.json")).ParseConfig()
 	)
 
 	if err != nil {
-		log.Fatalf("error parsing data.json: %v", err)
+		log.Fatalf("error parsing config.json: %v", err)
 	}
 
-	for _, req := range dataReq.Data {
-		mltPlexer.Handle(req.Path, proxy.NewProxy(
-			proxy.WithProxy(req.MakeProxy),
-			proxy.WithProxyUrl(req.ProxyUrl),
-			proxy.WithRedirectUrl(req.Url),
-			proxy.WithLog(log),
-			proxy.WithExpectedStatusCodes(req.ExpectedProxyStatusCodes),
-			proxy.WithProxyMethod(req.ProxyMethod),
-			proxy.WithRequestMethod(req.Method),
-		).Redirect())
+	for _, service := range dataReq.Services {
+		for _, request := range service.Requests {
+			ttt := "/" + service.Service + request.Path
+			mltPlexer.Handler(request.Method, ttt, proxy.NewProxy(
+				proxy.WithLog(log),
+				proxy.WithRequest(request),
+				proxy.WithServices(service.Service),
+			).Redirect())
+		}
 	}
 
-	log.Info("Starting server on port 8080...")
-
-	readTimeOut, err := time.ParseDuration(viper.GetString("server.read_timeout"))
+	readTimeOut, err := time.ParseDuration(viper.GetString("gateway_service.read_timeout"))
 
 	if err != nil {
 		log.Fatalf("errror occured parsing read_timeout from config: %s", err.Error())
 	}
 
-	writeTimeOut, err := time.ParseDuration(viper.GetString("server.write_timeout"))
+	writeTimeOut, err := time.ParseDuration(viper.GetString("gateway_service.write_timeout"))
 
 	if err != nil {
 		log.Fatalf("errror occured parsing write_timeout from config: %s", err.Error())
 	}
 
-	ln, err := net.Listen(viper.GetString("server.server_protocol"), fmt.Sprintf(":%s", viper.GetString("server.port")))
+	ln, err := net.Listen(viper.GetString("gateway_service.con_type"), fmt.Sprintf(":%s", viper.GetString("gateway_service.port")))
 
 	if err != nil {
-		log.Fatalf("error occured listening on port: %s", viper.GetString("server.port"))
+		log.Fatalf("error occured listener: %s", err.Error())
 	}
 
 	var (
@@ -70,7 +68,7 @@ func Run() {
 			server.WithListener(&ln),
 			server.WithSrv(&http.Server{
 				Handler:        mltPlexer,
-				MaxHeaderBytes: viper.GetInt("server.max_header_bytes"),
+				MaxHeaderBytes: viper.GetInt("gateway_service.max_header_bytes"),
 				ReadTimeout:    readTimeOut,
 				WriteTimeout:   writeTimeOut,
 			}),
@@ -82,13 +80,13 @@ func Run() {
 		}
 	}()
 
-	log.Info("Gateway successfully started")
+	log.Info("Gateway service successfully started")
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 	<-quit
 
-	log.Info("Gateway server shutting down")
+	log.Info("Gateway service shutting down")
 
 	if err = srv.Shutdown(context.Background()); err != nil {
 		log.Errorf("error occured on server shutting down: %s", err.Error())
@@ -96,7 +94,7 @@ func Run() {
 }
 
 func initConfig() error {
-	viper.AddConfigPath("configs")
+	viper.AddConfigPath("config")
 	viper.SetConfigName("config")
 	return viper.ReadInConfig()
 }

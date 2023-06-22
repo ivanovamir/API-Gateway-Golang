@@ -1,7 +1,12 @@
 .SILENT:
 
-run:
-	go run cmd/main.go
+include .env
 
-test:
-	go test ./... -v -coverpkg=./...
+run:
+	docker-compose up --build -d
+
+run_dev:
+	docker compose -f dev.docker-compose.yml up --build -d
+
+stop:
+	docker-compose stop

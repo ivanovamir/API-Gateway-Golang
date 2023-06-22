@@ -1,0 +1,6 @@
+"gateway_service":
+  "con_type": "tcp"
+  "port": "8081"
+  "max_header_bytes": "1000000"
+  "read_timeout": "10s"
+  "write_timeout": "10s"

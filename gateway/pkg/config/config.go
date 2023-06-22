@@ -57,38 +57,42 @@ func (c *config) validate(dst []byte, src *Data) error {
 		return fmt.Errorf("error occured validating: %v", err)
 	}
 
-	for _, val := range src.Data {
-		if val.Path == "" {
-			return fmt.Errorf("path is empty")
-		}
+	for _, service := range src.Services {
 
-		if val.Url == "" {
-			return fmt.Errorf("url is empty")
-		}
-
-		if val.Method == "" {
-			return fmt.Errorf("method is empty")
-		}
-
-		if !c.isUpperCase(val.Method) {
-			return fmt.Errorf("method must be uppercase")
-		}
-
-		if val.MakeProxy {
-			if val.ExpectedProxyStatusCodes == nil {
-				return fmt.Errorf("expected_proxy_status_codes is empty")
+		for _, request := range service.Requests {
+			if len(request.Path) == 0 {
+				return fmt.Errorf("path is empty")
 			}
 
-			if val.ProxyUrl == "" {
-				return fmt.Errorf("proxy url is empty")
+			if len(request.Url) == 0 {
+				return fmt.Errorf("url is empty")
 			}
 
-			if val.ProxyMethod == "" {
-				return fmt.Errorf("proxy_method is empty")
+			if len(request.Method) == 0 {
+				return fmt.Errorf("method is empty")
 			}
-			if !c.isUpperCase(val.ProxyMethod) {
-				return fmt.Errorf("proxy_method must be uppercase")
+
+			if !c.isUpperCase(request.Method) {
+				return fmt.Errorf("method must be uppercase")
 			}
+
+			if request.MakeProxy {
+				if request.ExpectedProxyStatusCodes == nil {
+					return fmt.Errorf("expected_proxy_status_codes is empty")
+				}
+
+				if len(request.ProxyUrl) == 0 {
+					return fmt.Errorf("proxy url is empty")
+				}
+
+				if len(request.ProxyMethod) == 0 {
+					return fmt.Errorf("proxy_method is empty")
+				}
+				if !c.isUpperCase(request.ProxyMethod) {
+					return fmt.Errorf("proxy_method must be uppercase")
+				}
+			}
+
 		}
 	}
 

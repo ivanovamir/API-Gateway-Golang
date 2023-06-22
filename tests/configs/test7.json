@@ -1,8 +1,0 @@
-{
-  "requests": [
-    {
-      "path": "/api/hello",
-      "url": "https://jsonplaceholder.typicode.com/posts/1"
-    }
-  ]
-}

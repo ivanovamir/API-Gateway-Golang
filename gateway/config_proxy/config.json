@@ -1,0 +1,220 @@
+{
+  "services": [
+    {
+      "service": "auth",
+      "requests": [
+        {
+          "path": "/sign-up",
+          "url": "http://auth:8080",
+          "method": "POST"
+        },
+        {
+          "path": "/sign-in",
+          "url": "http://auth:8080",
+          "method": "POST"
+        },
+        {
+          "path": "/update-access-token",
+          "url": "http://auth:8080",
+          "method": "POST"
+        },
+        {
+          "path": "/update-refresh-token",
+          "url": "http://auth:8080",
+          "method": "POST"
+        },
+        {
+          "path": "/validate-user",
+          "url": "http://auth:8080",
+          "method": "POST"
+        },
+        {
+          "path": "/change-user-password",
+          "url": "http://auth:8080",
+          "method": "POST"
+        },
+        {
+          "path": "/generate-qr",
+          "url": "http://auth:8080",
+          "method": "GET"
+        }
+      ]
+    },
+    {
+      "service": "profile",
+      "requests": [
+        {
+          "path": "/user",
+          "url": "http://profile:8082",
+          "method": "GET",
+          "make_proxy": true,
+          "proxy_url": "http://auth:8080/validate-user",
+          "proxy_method": "POST",
+          "expected_proxy_status_codes": [
+            {
+              "status_code": "200"
+            }
+          ]
+        },
+        {
+          "path": "/update-photo",
+          "url": "http://profile:8082",
+          "method": "POST",
+          "make_proxy": true,
+          "proxy_url": "http://auth:8080/validate-user",
+          "proxy_method": "POST",
+          "expected_proxy_status_codes": [
+            {
+              "status_code": "200"
+            }
+          ]
+        },
+        {
+          "path": "/update-username",
+          "url": "http://profile:8082",
+          "method": "POST",
+          "make_proxy": true,
+          "proxy_url": "http://auth:8080/validate-user",
+          "proxy_method": "POST",
+          "expected_proxy_status_codes": [
+            {
+              "status_code": "200"
+            }
+          ]
+        },
+        {
+          "path": "/update-user-about",
+          "url": "http://profile:8082",
+          "method": "POST",
+          "make_proxy": true,
+          "proxy_url": "http://auth:8080/validate-user",
+          "proxy_method": "POST",
+          "expected_proxy_status_codes": [
+            {
+              "status_code": "200"
+            }
+          ]
+        },
+        {
+          "path": "/update-video-content",
+          "url": "http://profile:8082",
+          "method": "POST",
+          "make_proxy": true,
+          "proxy_url": "http://auth:8080/validate-user",
+          "proxy_method": "POST",
+          "expected_proxy_status_codes": [
+            {
+              "status_code": "200"
+            }
+          ]
+        },
+        {
+          "path": "/update-user-location",
+          "url": "http://profile:8082",
+          "method": "POST",
+          "make_proxy": true,
+          "proxy_url": "http://auth:8080/validate-user",
+          "proxy_method": "POST",
+          "expected_proxy_status_codes": [
+            {
+              "status_code": "200"
+            }
+          ]
+        },
+        {
+          "path": "/delete-user",
+          "url": "http://profile:8082",
+          "method": "POST",
+          "make_proxy": true,
+          "proxy_url": "http://auth:8080/validate-user",
+          "proxy_method": "POST",
+          "expected_proxy_status_codes": [
+            {
+              "status_code": "200"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "service": "feedback",
+      "requests": [
+        {
+          "path": "/feedback",
+          "url": "http://feedback:8083",
+          "method": "POST",
+          "make_proxy": true,
+          "proxy_url": "http://auth:8080/validate-user",
+          "proxy_method": "POST",
+          "expected_proxy_status_codes": [
+            {
+              "status_code": "200"
+            }
+          ]
+        },
+        {
+          "path": "/feedback",
+          "url": "http://feedback:8083",
+          "method": "GET",
+          "make_proxy": true,
+          "proxy_url": "http://auth:8080/validate-user",
+          "proxy_method": "POST",
+          "expected_proxy_status_codes": [
+            {
+              "status_code": "200"
+            }
+          ]
+        },
+        {
+          "path": "/moderate-feedback",
+          "url": "http://feedback:8083",
+          "method": "POST",
+          "make_proxy": true,
+          "proxy_url": "http://auth:8080/validate-user",
+          "proxy_method": "POST",
+          "expected_proxy_status_codes": [
+            {
+              "status_code": "200"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "service": "cms",
+      "requests": [
+        {
+          "path": "/*any",
+          "url": "http://admin:8000/cms",
+          "method": "GET",
+          "make_proxy": true,
+          "proxy_url": "http://auth:8080/validate-user",
+          "proxy_method": "POST",
+          "expected_proxy_status_codes": [
+            {
+              "status_code": "200"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "service": "client",
+      "requests": [
+        {
+          "path": "/*any",
+          "url": "http://admin:8000/client",
+          "method": "GET",
+          "make_proxy": true,
+          "proxy_url": "http://auth:8080/validate-user",
+          "proxy_method": "POST",
+          "expected_proxy_status_codes": [
+            {
+              "status_code": "200"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
